@@ -79,7 +79,7 @@ const LayoutBase = props => {
             <div className='mt-20 hidden md:block md:fixed md:left-5 md:w-[300px]'>
               <Catalog {...props} />
             </div>
-          )} }
+          )} 
           <div className='overflow-hidden md:mt-20 flex-1 '>
             {/* 左侧内容区域 - 可滚动 */}
             <div
