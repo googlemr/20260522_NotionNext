@@ -45,22 +45,22 @@ const LayoutBase = props => {
   const searchModal = useRef(null)
   const router = useRouter()
   
-  // 独立状态控制：原生极简搜索框显隐与输入
+  // 独立状态控制
   const [showInput, setShowInput] = useState(false)
   const [keyword, setKeyword] = useState('')
   const inputRef = useRef(null)
 
-  // 处理原生搜索跳转逻辑
+  // 核心：修正跳转路由，使用 NotionNext 内置标准 keyword 参数，规避 404 错误
   const handleSearchSubmit = (e) => {
     e.preventDefault()
     if (keyword.trim()) {
-      router.push(`/search?s=${encodeURIComponent(keyword.trim())}`)
+      router.push(`/search?keyword=${encodeURIComponent(keyword.trim())}`)
       setShowInput(false)
       setKeyword('')
     }
   }
 
-  // 100% 精准拦截：监视右侧带有“搜索”文字的菜单点击事件
+  // 精准拦截右侧菜单“搜索”字样的点击事件
   useEffect(() => {
     if (!isBrowser) return
 
@@ -69,7 +69,7 @@ const LayoutBase = props => {
       if (target && (target.textContent?.includes('搜索') || target.href?.includes('/search'))) {
         e.preventDefault()
         e.stopPropagation()
-        setShowInput(true) // 唤醒全屏输入模式
+        setShowInput(true)
       }
     }
 
@@ -77,7 +77,7 @@ const LayoutBase = props => {
     return () => document.removeEventListener('click', handleMenuClick, true)
   }, [])
 
-  // 核心体验：当弹窗开启时，打字光标自动 100% 强制聚焦
+  // 弹窗开启时，打字光标 100% 自动聚焦
   useEffect(() => {
     if (showInput && inputRef.current) {
       inputRef.current.focus()
@@ -119,7 +119,7 @@ const LayoutBase = props => {
             </div>
           </div>
 
-          {/* 右侧导航和页脚 - 完好保留原版所有位置间距 */}
+          {/* 右侧导航和页脚 */}
           <div className='hidden md:flex md:flex-col md:flex-shrink-0 md:h-[100vh] sticky top-20'>
             <NavBar {...props} />
             <Footer {...props} />
@@ -130,7 +130,7 @@ const LayoutBase = props => {
           <JumpToTopButton />
         </div>
 
-        {/* 彻底独立、高自洽的实用主义 Spotlight 搜索模态框 */}
+        {/* 极致纯净的全局搜索输入浮层 */}
         {showInput && (
           <div 
             className="fixed inset-0 bg-white/70 dark:bg-[#232222]/80 backdrop-blur-sm z-50 flex justify-center items-start pt-[20vh] animate__animated animate__fadeIn animate__faster"
@@ -138,7 +138,7 @@ const LayoutBase = props => {
           >
             <div 
               className="w-full max-w-lg px-4"
-              onClick={(e) => e.stopPropagation()} // 阻止冒泡避免误关
+              onClick={(e) => e.stopPropagation()}
             >
               <form onSubmit={handleSearchSubmit} className="w-full border-b border-slate-400 dark:border-gray-500 flex items-center py-2">
                 <i className="fas fa-search text-slate-400 dark:text-gray-500 mr-3 text-base" />
