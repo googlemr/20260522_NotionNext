@@ -1,3 +1,4 @@
+import BackToTop from './components/BackToTop' // 20260523新增
 import { AdSlot } from '@/components/GoogleAdsense'
 import replaceSearchResult from '@/components/Mark'
 import NotionPage from '@/components/NotionPage'
