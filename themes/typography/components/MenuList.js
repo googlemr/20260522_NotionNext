@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from 'react'
 import CONFIG from '../config'
 import { MenuItemCollapse } from './MenuItemCollapse'
 import { MenuItemDrop } from './MenuItemDrop'
+// 核心引入：拿取上一层传下来的全局搜索引脚
+import { useSimpleGlobal } from '../index'
 
 /**
  * 菜单导航
@@ -23,10 +25,16 @@ export const MenuList = ({ customNav, customMenu }) => {
   }
   const router = useRouter()
   const collapseRef = useRef(null)
+  
+  // 核心：调用全局搜索控制弹窗
+  const { searchModal } = useSimpleGlobal()
 
   useEffect(() => {
     router.events.on('routeChangeStart', closeMenu)
-  })
+    return () => {
+      router.events.off('routeChangeStart', closeMenu)
+    }
+  }, [router.events])
 
   let links = [
     {
@@ -62,21 +70,42 @@ export const MenuList = ({ customNav, customMenu }) => {
     return null
   }
 
+  // 核心逻辑：精准拦截搜索菜单项，将其重构为弹窗触发模式，不改动任何原有排版样式
+  const renderMenuItem = (link, index) => {
+    const isSearchMenu = link?.name === '搜索' || link?.to === '/search' || link?.href === '/search'
+
+    if (isSearchMenu) {
+      return (
+        <div 
+          key={index} 
+          onClick={(e) => {
+            e.preventDefault()
+            if (searchModal?.current) {
+              searchModal.current.openSearch() // 一键弹出带打字光标的窗口
+            }
+          }}
+          className="cursor-pointer"
+        >
+          {/* 严格复用你主题原本的单项菜单组件，不添加或删除任何文字或图标 */}
+          <MenuItemDrop link={{ ...link, to: '#', href: '#' }} />
+        </div>
+      )
+    }
+
+    return <MenuItemDrop key={index} link={link} />
+  }
+
   return (
     <>
       {/* 大屏模式菜单 - 垂直排列 */}
       <div id='nav-menu-pc' className='hidden md:flex md:flex-col md:gap-2'>
-        {links?.map((link, index) => (
-          <MenuItemDrop key={index} link={link} />
-        ))}
+        {links?.map((link, index) => renderMenuItem(link, index))}
       </div>
       {/* 移动端小屏菜单 - 水平排列 */}
       <div
         id='nav-menu-mobile'
         className='flex md:hidden my-auto justify-center space-x-4'>
-        {links?.map((link, index) => (
-          <MenuItemDrop key={index} link={link} />
-        ))}
+        {links?.map((link, index) => renderMenuItem(link, index))}
       </div>
     </>
   )
