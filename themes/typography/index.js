@@ -60,8 +60,14 @@ export const useSimpleGlobal = () => useContext(ThemeGlobalSimple)
 const LayoutBase = props => {
   const { children } = props
   const { onLoading, fullWidth } = useGlobal()
-  // const onLoading = true
   const searchModal = useRef(null)
+
+  // 快捷键唤醒搜索弹窗逻辑
+  const openSearch = () => {
+    if (searchModal?.current) {
+      searchModal.current.openSearch()
+    }
+  }
 
   return (
     <ThemeGlobalSimple.Provider value={{ searchModal }}>
@@ -73,13 +79,30 @@ const LayoutBase = props => {
         {siteConfig('SIMPLE_TOP_BAR', null, CONFIG) && <TopBar {...props} />}
 
         <div className='flex flex-1 mx-auto overflow-hidden py-8 md:p-0 md:max-w-7xl md:px-24 w-screen'>
-          {/* 主体 - 使用 flex 布局 */}
-          {/* 文章详情才显示 */}
-           {props.post && (
-            <div className='mt-20 hidden md:block md:fixed md:left-5 md:w-[300px]'>
+          
+          {/* 左侧一体化通用侧边栏：PC端固定可见，移动端自动完全隐藏 */}
+          <div className='mt-20 hidden md:block md:fixed md:left-5 md:w-[240px] px-2 select-none'>
+            {props.post ? (
+              // 1. 如果是文章详情页：无缝展示极简动态目录
               <Catalog {...props} />
-            </div>
-          )} 
+            ) : (
+              // 2. 如果是主页或其它列表页：展示实用主义纯净搜索框
+              <div className='relative group animate__animated animate__fadeIn'>
+                <div className='text-xs font-semibold tracking-wider text-slate-400 dark:text-gray-500 mb-2 uppercase flex items-center'>
+                  <i className='mr-1.5 fas fa-search opacity-60' />
+                  搜索文章
+                </div>
+                <input 
+                  type='text'
+                  readOnly
+                  onClick={openSearch}
+                  placeholder='点击或按 Ctrl+K 搜索...'
+                  className='w-full bg-transparent text-xs text-slate-800 dark:text-gray-200 placeholder-slate-300 dark:placeholder-gray-600 py-1 border-b border-slate-100 dark:border-gray-800 focus:outline-none cursor-pointer group-hover:border-slate-400 dark:group-hover:border-gray-500 transition-colors duration-300'
+                />
+              </div>
+            )}
+          </div> 
+
           <div className='overflow-hidden md:mt-20 flex-1 '>
             {/* 左侧内容区域 - 可滚动 */}
             <div
@@ -99,7 +122,7 @@ const LayoutBase = props => {
               )}
               <AdSlot type='native' />
               {/* 移动端页脚 - 显示在底部 */}
-              <div className='md:hidden  z-30  '>
+              <div className='md:hidden  z-30   '>
                 <Footer {...props} />
               </div>
             </div>
@@ -116,7 +139,7 @@ const LayoutBase = props => {
           <JumpToTopButton />
         </div>
 
-        {/* 搜索框 */}
+        {/* 搜索框弹窗 */}
         <AlgoliaSearchModal cRef={searchModal} {...props} />
       </div>
     </ThemeGlobalSimple.Provider>
@@ -171,7 +194,7 @@ const LayoutSearch = props => {
   return <LayoutPostList {...props} />
 }
 
- function groupArticlesByYearArray(articles) {
+function groupArticlesByYearArray(articles) {
   const grouped = {};
 
   for (const article of articles) {
@@ -191,8 +214,6 @@ const LayoutSearch = props => {
     .sort(([a], [b]) => b - a)
     .map(([year, posts]) => ({ year, posts }));
 }
-
-
 
 /**
  * 归档页
@@ -237,16 +258,12 @@ const LayoutSlug = props => {
           <ArticleInfo post={post} />
 
           {/* 广告嵌入 */}
-          {/* <AdSlot type={'in-article'} /> */}
           <WWAds orientation='horizontal' className='w-full' />
 
           <div id='article-wrapper'>
             {/* Notion 文章主体 */}
             {!lock && <NotionPage post={post} />}
           </div>
-
-          {/* 分享 */}
-          {/* <ShareBar post={post} /> */}
 
           {/* 广告嵌入 */}
           <AdSlot type={'in-article'} />
@@ -276,7 +293,6 @@ const Layout404 = props => {
   const router = useRouter()
   const waiting404 = siteConfig('POST_WAITING_TIME_FOR_404') * 1000
   useEffect(() => {
-    // 404
     if (!post) {
       setTimeout(() => {
         if (isBrowser) {
