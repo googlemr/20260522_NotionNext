@@ -1,4 +1,3 @@
-import BackToTop from './components/BackToTop' // 20260523新增
 import { AdSlot } from '@/components/GoogleAdsense'
 import replaceSearchResult from '@/components/Mark'
 import NotionPage from '@/components/NotionPage'
@@ -76,11 +75,11 @@ const LayoutBase = props => {
         <div className='flex flex-1 mx-auto overflow-hidden py-8 md:p-0 md:max-w-7xl md:px-24 w-screen'>
           {/* 主体 - 使用 flex 布局 */}
           {/* 文章详情才显示 */}
-          {/* {props.post && (
+          { {props.post && (
             <div className='mt-20 hidden md:block md:fixed md:left-5 md:w-[300px]'>
               <Catalog {...props} />
             </div>
-          )} */}
+          )} }
           <div className='overflow-hidden md:mt-20 flex-1 '>
             {/* 左侧内容区域 - 可滚动 */}
             <div
