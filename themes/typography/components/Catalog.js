@@ -4,7 +4,7 @@ import { uuidToId } from 'notion-utils'
 import { useEffect, useRef, useState } from 'react'
 
 /**
- * 目录导航组件
+ * 目录导航组件（极简主义视觉优化版）
  * @param toc
  * @returns {JSX.Element}
  * @constructor
@@ -92,36 +92,40 @@ const Catalog = ({ post }) => {
   }
 
   return (
-    <div className='px-3 '>
-      <div className='dark:text-white mb-2'>
-        <i className='mr-1 fas fa-stream' />
+    <div className='px-1 select-none'>
+      {/* 顶部标题：降低存在感，与网格背景融合 */}
+      <div className='text-xs font-semibold tracking-wider text-slate-400 dark:text-gray-500 mb-4 uppercase'>
+        <i className='mr-1.5 fas fa-stream opacity-70' />
         {locale.COMMON.TABLE_OF_CONTENTS}
       </div>
 
       <div
-        className='overflow-y-auto overscroll-none max-h-36 lg:max-h-96 scroll-hidden'
+        className='overflow-y-auto overscroll-none max-h-36 lg:max-h-[75vh] scroll-hidden'
         ref={tRef}>
-        <nav className='h-full text-black group'>
+        <nav className='h-full text-slate-800 dark:text-gray-300 group'>
           {post?.toc?.map(tocItem => {
             const id = uuidToId(tocItem.id)
+            const isActive = activeSection === id
+            
             return (
               <a
                 key={id}
                 href={`#${id}`}
-                className={`${activeSection === id 
-                  ? 'dark:border-white border-red-700 text-red-700 font-bold' 
-                  : 'text-[var(--primary-color)] dark:text-gray-500 filter blur-[1px] opacity-50 group-hover:filter-none group-hover:blur-0 group-hover:opacity-100'} 
-                  hover:font-semibold hover:text-red-600 hover:filter-none hover:blur-0 hover:opacity-100
-                  border-l pl-4 block border-lduration-300 transform 
-                  dark:hover:text-red-400 dark:border-gray-600
-                  notion-table-of-contents-item-indent-level-${tocItem.indentLevel} catalog-item 
-                  transition-all duration-300 ease-in-out`}>
+                className={`
+                  block pl-3 text-xs tracking-wide transition-all duration-300 ease-in-out
+                  border-l-2 py-1 catalog-item
+                  ${isActive 
+                    ? 'border-slate-800 dark:border-white text-slate-900 dark:text-white font-medium opacity-100' 
+                    : 'border-slate-100 dark:border-gray-800 text-slate-400 dark:text-gray-500 opacity-60 group-hover:opacity-80'} 
+                  hover:text-slate-900 dark:hover:text-white hover:border-slate-400 dark:hover:border-gray-500 hover:opacity-100
+                  notion-table-of-contents-item-indent-level-${tocItem.indentLevel}
+                `}>
                 <span
                   style={{
                     display: 'inline-block',
-                    marginLeft: tocItem.indentLevel * 16
+                    marginLeft: tocItem.indentLevel * 12 // 微调缩进间距，更紧凑
                   }}
-                  className={`truncate ${activeSection === id ? 'font-bold text-red-600 dark:text-white underline' : ''}`}>
+                  className='truncate w-full'>
                   {tocItem.text}
                 </span>
               </a>
