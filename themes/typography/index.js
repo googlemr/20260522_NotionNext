@@ -32,7 +32,7 @@ const WWAds = dynamic(() => import('@/components/WWAds'), { ssr: false })
 const BlogListPage = dynamic(() => import('./components/BlogListPage'), { ssr: false })
 const RecommendPosts = dynamic(() => import('./components/RecommendPosts'), { ssr: false })
 
-// 主题全局状态
+// 主题全局状态（提供给子组件调用控制搜索框）
 const ThemeGlobalSimple = createContext()
 export const useSimpleGlobal = () => useContext(ThemeGlobalSimple)
 
@@ -50,7 +50,7 @@ const LayoutBase = props => {
   const [keyword, setKeyword] = useState('')
   const inputRef = useRef(null)
 
-  // 核心：修正跳转路由，使用 NotionNext 内置标准 keyword 参数，规避 404 错误
+  // 处理原生搜索跳转
   const handleSearchSubmit = (e) => {
     e.preventDefault()
     if (keyword.trim()) {
@@ -60,24 +60,7 @@ const LayoutBase = props => {
     }
   }
 
-  // 精准拦截右侧菜单“搜索”字样的点击事件
-  useEffect(() => {
-    if (!isBrowser) return
-
-    const handleMenuClick = (e) => {
-      const target = e.target.closest('a') || e.target.closest('button')
-      if (target && (target.textContent?.includes('搜索') || target.href?.includes('/search'))) {
-        e.preventDefault()
-        e.stopPropagation()
-        setShowInput(true)
-      }
-    }
-
-    document.addEventListener('click', handleMenuClick, true)
-    return () => document.removeEventListener('click', handleMenuClick, true)
-  }, [])
-
-  // 弹窗开启时，打字光标 100% 自动聚焦
+  // 强制光标聚焦
   useEffect(() => {
     if (showInput && inputRef.current) {
       inputRef.current.focus()
@@ -85,7 +68,7 @@ const LayoutBase = props => {
   }, [showInput])
 
   return (
-    <ThemeGlobalSimple.Provider value={{ searchModal }}>
+    <ThemeGlobalSimple.Provider value={{ searchModal, setShowInput }}>
       <div
         id='theme-typography'
         className={`${siteConfig('FONT_STYLE')} font-typography h-screen flex flex-col dark:text-gray-300 bg-white dark:bg-[#232222] overflow-hidden relative`}>
@@ -130,16 +113,13 @@ const LayoutBase = props => {
           <JumpToTopButton />
         </div>
 
-        {/* 极致纯净的全局搜索输入浮层 */}
+        {/* 极简原生输入浮层 */}
         {showInput && (
           <div 
             className="fixed inset-0 bg-white/70 dark:bg-[#232222]/80 backdrop-blur-sm z-50 flex justify-center items-start pt-[20vh] animate__animated animate__fadeIn animate__faster"
             onClick={() => setShowInput(false)}
           >
-            <div 
-              className="w-full max-w-lg px-4"
-              onClick={(e) => e.stopPropagation()}
-            >
+            <div className="w-full max-w-lg px-4" onClick={(e) => e.stopPropagation()}>
               <form onSubmit={handleSearchSubmit} className="w-full border-b border-slate-400 dark:border-gray-500 flex items-center py-2">
                 <i className="fas fa-search text-slate-400 dark:text-gray-500 mr-3 text-base" />
                 <input 
@@ -186,7 +166,7 @@ const LayoutSearch = props => {
         target: { element: 'span', className: 'text-red-500 border-b border-dashed' }
       })
     }
-  }, [])
+  }, [keyword]) // 核心修正：绑定 keyword 依赖，确保搜索页数据重绘不中断
   return <LayoutPostList {...props} />
 }
 
