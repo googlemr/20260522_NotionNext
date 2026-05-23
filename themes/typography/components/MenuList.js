@@ -6,8 +6,6 @@ import { useEffect, useRef, useState } from 'react'
 import CONFIG from '../config'
 import { MenuItemCollapse } from './MenuItemCollapse'
 import { MenuItemDrop } from './MenuItemDrop'
-// 核心引入：拿取上面 LayoutBase 的控制引脚
-import { useSimpleGlobal } from '../index'
 
 /**
  * 菜单导航
@@ -25,17 +23,10 @@ export const MenuList = ({ customNav, customMenu }) => {
   }
   const router = useRouter()
   const collapseRef = useRef(null)
-  
-  // 安全地获取顶层传下来的控制开关
-  const globalState = useSimpleGlobal()
-  const setShowInput = globalState?.setShowInput
 
   useEffect(() => {
     router.events.on('routeChangeStart', closeMenu)
-    return () => {
-      router.events.off('routeChangeStart', closeMenu)
-    }
-  }, [router.events])
+  })
 
   let links = [
     {
@@ -75,51 +66,17 @@ export const MenuList = ({ customNav, customMenu }) => {
     <>
       {/* 大屏模式菜单 - 垂直排列 */}
       <div id='nav-menu-pc' className='hidden md:flex md:flex-col md:gap-2'>
-        {links?.map((link, index) => {
-          const isSearchMenu = link?.name === '搜索' || link?.to === '/search' || link?.href === '/search'
-          
-          if (isSearchMenu && setShowInput) {
-            // 精准重写点击逻辑，不改动任何原厂样式与图标
-            return (
-              <div 
-                key={index} 
-                onClick={(e) => {
-                  e.preventDefault()
-                  setShowInput(true)
-                }}
-                className="cursor-pointer"
-              >
-                <MenuItemDrop link={{ ...link, to: 'javascript:void(0);', href: 'javascript:void(0);' }} />
-              </div>
-            )
-          }
-          return <MenuItemDrop key={index} link={link} />
-        })}
+        {links?.map((link, index) => (
+          <MenuItemDrop key={index} link={link} />
+        ))}
       </div>
-      
       {/* 移动端小屏菜单 - 水平排列 */}
       <div
         id='nav-menu-mobile'
         className='flex md:hidden my-auto justify-center space-x-4'>
-        {links?.map((link, index) => {
-          const isSearchMenu = link?.name === '搜索' || link?.to === '/search' || link?.href === '/search'
-          
-          if (isSearchMenu && setShowInput) {
-            return (
-              <div 
-                key={index} 
-                onClick={(e) => {
-                  e.preventDefault()
-                  setShowInput(true)
-                }}
-                className="cursor-pointer"
-              >
-                <MenuItemDrop link={{ ...link, to: 'javascript:void(0);', href: 'javascript:void(0);' }} />
-              </div>
-            )
-          }
-          return <MenuItemDrop key={index} link={link} />
-        })}
+        {links?.map((link, index) => (
+          <MenuItemDrop key={index} link={link} />
+        ))}
       </div>
     </>
   )
