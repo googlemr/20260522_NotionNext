@@ -36,6 +36,17 @@ export default function BlogListPage(props) {
 
   return (
     <div className='w-full md:pr-8 mb-12 px-5'>
+      
+      {/* 核心视觉注入：用最干净的内联样式强制把标题的下划线扒掉，绝不动到任何业务逻辑 */}
+      <style jsx global>{`
+        #posts-wrapper a, 
+        #posts-wrapper h2, 
+        #posts-wrapper span {
+          text-decoration: none !important;
+          border-bottom: none !important;
+        }
+      `}</style>
+
       <div id='posts-wrapper'>
         {posts?.map((p, index) => (
           <div key={p.id}>
