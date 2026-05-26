@@ -24,9 +24,10 @@ export function handleDataBeforeReturn(db: SiteData): SiteData {
     }
   };
 
-  // 分别对全站文章列表和最新文章列表进行强制重排
+  // 分别对全站文章列表、最新推荐、以及导航页列表【全部】进行强制重排
   sortImagesBySlug(db.allPages)
   sortImagesBySlug(db.latestPosts)
+  sortImagesBySlug(db.allNavPages) // 🌟 加上这行，彻底封死首页漏网之鱼的可能
 
   delete db.block
   delete db.schema
