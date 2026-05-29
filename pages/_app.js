@@ -33,63 +33,65 @@ const MyApp = ({ Component, pageProps }) => {
   }, [queryTheme, notionTheme, configTheme])
 
   // =========================
-  // 🎯 视频终极优化方案（稳定版）
+  // 🎯 视频封面终极稳定方案（已封装进 _app）
   // =========================
   useEffect(() => {
     if (typeof window === 'undefined') return
 
     const processVideos = () => {
-      const videos = document.querySelectorAll('video:not(.video-processed)')
+      const videos = document.querySelectorAll('video:not([data-fixed="1"])')
 
-      videos.forEach(video => {
-        video.classList.add('video-processed')
+      videos.forEach((video: HTMLVideoElement) => {
+        video.dataset.fixed = '1'
 
-        // 1️⃣ 强制加载 metadata（解决手机空白核心）
         video.setAttribute('preload', 'metadata')
-
-        // 2️⃣ 移动端兼容
         video.setAttribute('playsinline', 'true')
         video.setAttribute('webkit-playsinline', 'true')
 
-        // 3️⃣ 视觉优化（避免空白块突兀）
         video.style.backgroundColor = '#000'
         video.style.borderRadius = '8px'
 
-        // 4️⃣ ⭐ 核心增强：尝试生成封面（第一帧捕获）
-        try {
-          if (video.readyState >= 2) {
-            // 已有数据 → 截取第一帧
+        let done = false
+
+        const capture = () => {
+          if (done) return
+          if (!video.videoWidth || !video.videoHeight) return
+
+          try {
             const canvas = document.createElement('canvas')
             canvas.width = video.videoWidth
             canvas.height = video.videoHeight
 
             const ctx = canvas.getContext('2d')
+            if (!ctx) return
+
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
 
-            const poster = canvas.toDataURL('image/jpeg', 0.7)
-            video.setAttribute('poster', poster)
-          } else {
-            // 没加载到数据 → 等 loadeddata 再处理
-            video.addEventListener('loadeddata', () => {
-              const canvas = document.createElement('canvas')
-              canvas.width = video.videoWidth
-              canvas.height = video.videoHeight
+            const poster = canvas.toDataURL('image/jpeg', 0.8)
 
-              const ctx = canvas.getContext('2d')
-              ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-
-              const poster = canvas.toDataURL('image/jpeg', 0.7)
+            if (poster && poster.length > 10000) {
               video.setAttribute('poster', poster)
-            })
-          }
-        } catch (e) {
-          // fallback：避免报错影响页面
-          console.log('video poster gen failed:', e)
+              done = true
+            }
+          } catch (e) {}
         }
+
+        const forceSeek = () => {
+          try {
+            video.currentTime = 0
+          } catch {}
+        }
+
+        video.addEventListener('loadedmetadata', forceSeek)
+        video.addEventListener('loadedmetadata', capture)
+        video.addEventListener('loadeddata', capture)
+        video.addEventListener('canplay', capture)
+
+        setTimeout(capture, 100)
+        setTimeout(capture, 800)
       })
     }
 
-    // MutationObserver：监听 Notion 动态渲染
     const observer = new MutationObserver(() => {
       processVideos()
     })
@@ -99,7 +101,6 @@ const MyApp = ({ Component, pageProps }) => {
       subtree: true
     })
 
-    // 初始执行一次
     processVideos()
 
     return () => observer.disconnect()
