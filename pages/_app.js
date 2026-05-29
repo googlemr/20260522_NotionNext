@@ -1,8 +1,7 @@
 import '@/styles/globals.css'
 import '@/styles/utility-patterns.css'
-
-import '@/styles/notion.css' 
-import 'react-notion-x/src/styles.css' 
+import '@/styles/notion.css'
+import 'react-notion-x/src/styles.css'
 
 import useAdjustStyle from '@/hooks/useAdjustStyle'
 import { GlobalContextProvider } from '@/lib/global'
@@ -28,43 +27,83 @@ const MyApp = ({ Component, pageProps }) => {
   const queryTheme = getQueryParam(route.asPath, 'theme')
   const notionTheme = pageProps?.NOTION_CONFIG?.THEME
   const configTheme = BLOG.THEME
+
   const theme = useMemo(() => {
     return queryTheme || notionTheme || configTheme
   }, [queryTheme, notionTheme, configTheme])
 
-  // 🚀 终极图床闭环：强行用 R2 服务器截帧作为 Poster 封面
+  // =========================
+  // 🎯 视频终极优化方案（稳定版）
+  // =========================
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const observer = new MutationObserver(() => {
-        const videos = document.querySelectorAll('video:not(.auto-poster-processed)');
-        
-        videos.forEach(video => {
-          video.classList.add('auto-poster-processed');
+    if (typeof window === 'undefined') return
 
-          // 1. 获取视频源地址
-          let videoSrc = video.src || video.querySelector('source')?.src;
+    const processVideos = () => {
+      const videos = document.querySelectorAll('video:not(.video-processed)')
 
-          if (videoSrc) {
-            // 2. 核心黑客手段：直接把视频的第一帧链接强行赋给 poster 属性
-            // 配合 Cloudflare R2 的服务器特性，自动生成绝对秒开的静态封面
-            if (!videoSrc.includes('#t=')) {
-              video.setAttribute('poster', videoSrc + '#t=0.001');
-            }
+      videos.forEach(video => {
+        video.classList.add('video-processed')
+
+        // 1️⃣ 强制加载 metadata（解决手机空白核心）
+        video.setAttribute('preload', 'metadata')
+
+        // 2️⃣ 移动端兼容
+        video.setAttribute('playsinline', 'true')
+        video.setAttribute('webkit-playsinline', 'true')
+
+        // 3️⃣ 视觉优化（避免空白块突兀）
+        video.style.backgroundColor = '#000'
+        video.style.borderRadius = '8px'
+
+        // 4️⃣ ⭐ 核心增强：尝试生成封面（第一帧捕获）
+        try {
+          if (video.readyState >= 2) {
+            // 已有数据 → 截取第一帧
+            const canvas = document.createElement('canvas')
+            canvas.width = video.videoWidth
+            canvas.height = video.videoHeight
+
+            const ctx = canvas.getContext('2d')
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+
+            const poster = canvas.toDataURL('image/jpeg', 0.7)
+            video.setAttribute('poster', poster)
+          } else {
+            // 没加载到数据 → 等 loadeddata 再处理
+            video.addEventListener('loadeddata', () => {
+              const canvas = document.createElement('canvas')
+              canvas.width = video.videoWidth
+              canvas.height = video.videoHeight
+
+              const ctx = canvas.getContext('2d')
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+
+              const poster = canvas.toDataURL('image/jpeg', 0.7)
+              video.setAttribute('poster', poster)
+            })
           }
-
-          // 3. 移动端兼容性硬核补丁
-          video.style.backgroundColor = '#1a1a1a';
-          video.style.borderRadius = '8px';
-          video.setAttribute('preload', 'metadata');
-          video.setAttribute('playsinline', 'true');
-          video.setAttribute('webkit-playsinline', 'true');
-        });
-      });
-
-      observer.observe(document.documentElement, { childList: true, subtree: true });
-      return () => observer.disconnect();
+        } catch (e) {
+          // fallback：避免报错影响页面
+          console.log('video poster gen failed:', e)
+        }
+      })
     }
-  }, []);
+
+    // MutationObserver：监听 Notion 动态渲染
+    const observer = new MutationObserver(() => {
+      processVideos()
+    })
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    })
+
+    // 初始执行一次
+    processVideos()
+
+    return () => observer.disconnect()
+  }, [])
 
   const GLayout = useCallback(
     props => {
@@ -75,6 +114,7 @@ const MyApp = ({ Component, pageProps }) => {
   )
 
   const enableClerk = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+
   const content = (
     <GlobalContextProvider {...pageProps}>
       <GLayout {...pageProps}>
@@ -84,15 +124,11 @@ const MyApp = ({ Component, pageProps }) => {
       <ExternalPlugins {...pageProps} />
     </GlobalContextProvider>
   )
-  
-  return (
-    <>
-      {enableClerk ? (
-        <ClerkProvider localization={zhCN}>{content}</ClerkProvider>
-      ) : (
-        content
-      )}
-    </>
+
+  return enableClerk ? (
+    <ClerkProvider localization={zhCN}>{content}</ClerkProvider>
+  ) : (
+    content
   )
 }
 
