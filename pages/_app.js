@@ -33,7 +33,7 @@ const MyApp = ({ Component, pageProps }) => {
   }, [queryTheme, notionTheme, configTheme])
 
   // =========================
-  // 🎯 视频封面终极稳定方案（已封装进 _app）
+  // 🚀 最稳视频兜底方案（工业简化版）
   // =========================
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -51,50 +51,36 @@ const MyApp = ({ Component, pageProps }) => {
         video.style.backgroundColor = '#000'
         video.style.borderRadius = '8px'
 
-        let done = false
+        // ⭐关键：永远保证有 poster（彻底避免黑屏）
+        const fallbackPoster =
+          'data:image/svg+xml;base64,' +
+          btoa(`
+            <svg width="800" height="450" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="g" x1="0" x2="1">
+                  <stop offset="0%" stop-color="#111"/>
+                  <stop offset="100%" stop-color="#222"/>
+                </linearGradient>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#g)"/>
+              <circle cx="400" cy="225" r="45" fill="#444"/>
+            </svg>
+          `)
 
-        const capture = () => {
-          if (done) return
-          if (!video.videoWidth || !video.videoHeight) return
-
-          try {
-            const canvas = document.createElement('canvas')
-            canvas.width = video.videoWidth
-            canvas.height = video.videoHeight
-
-            const ctx = canvas.getContext('2d')
-            if (!ctx) return
-
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-
-            const poster = canvas.toDataURL('image/jpeg', 0.8)
-
-            if (poster && poster.length > 10000) {
-              video.setAttribute('poster', poster)
-              done = true
-            }
-          } catch (e) {}
+        if (!video.getAttribute('poster')) {
+          video.setAttribute('poster', fallbackPoster)
         }
 
-        const forceSeek = () => {
-          try {
-            video.currentTime = 0
-          } catch {}
-        }
-
-        video.addEventListener('loadedmetadata', forceSeek)
-        video.addEventListener('loadedmetadata', capture)
-        video.addEventListener('loadeddata', capture)
-        video.addEventListener('canplay', capture)
-
-        setTimeout(capture, 100)
-        setTimeout(capture, 800)
+        // ⭐iOS补丁：避免空白黑块
+        video.addEventListener('loadeddata', () => {
+          if (!video.getAttribute('poster')) {
+            video.setAttribute('poster', fallbackPoster)
+          }
+        })
       })
     }
 
-    const observer = new MutationObserver(() => {
-      processVideos()
-    })
+    const observer = new MutationObserver(processVideos)
 
     observer.observe(document.body, {
       childList: true,
