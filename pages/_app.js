@@ -32,30 +32,7 @@ const MyApp = ({ Component, pageProps }) => {
     return queryTheme || notionTheme || configTheme
   }, [queryTheme, notionTheme, configTheme])
 
-  useEffect(() => {
-    const source = queryTheme
-      ? 'url:theme'
-      : notionTheme
-        ? 'notion:config'
-        : 'blog/env:config'
-    console.log(
-      '[ThemeResolver][runtime-final]',
-      JSON.stringify(
-        {
-          note: 'This is the final theme used for rendering.',
-          configTheme,
-          notionTheme: notionTheme || null,
-          queryTheme: queryTheme || null,
-          finalTheme: theme,
-          source
-        },
-        null,
-        2
-      )
-    )
-  }, [configTheme, notionTheme, queryTheme, theme])
-
-  // Video Poster Auto-Generator (Safe Version)
+  // 🚀 终极图床闭环：强行用 R2 服务器截帧作为 Poster 封面
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const observer = new MutationObserver(() => {
@@ -64,21 +41,23 @@ const MyApp = ({ Component, pageProps }) => {
         videos.forEach(video => {
           video.classList.add('auto-poster-processed');
 
+          // 1. 获取视频源地址
+          let videoSrc = video.src || video.querySelector('source')?.src;
+
+          if (videoSrc) {
+            // 2. 核心黑客手段：直接把视频的第一帧链接强行赋给 poster 属性
+            // 配合 Cloudflare R2 的服务器特性，自动生成绝对秒开的静态封面
+            if (!videoSrc.includes('#t=')) {
+              video.setAttribute('poster', videoSrc + '#t=0.001');
+            }
+          }
+
+          // 3. 移动端兼容性硬核补丁
           video.style.backgroundColor = '#1a1a1a';
           video.style.borderRadius = '8px';
-
-          video.muted = true;
-          video.setAttribute('muted', 'true');
+          video.setAttribute('preload', 'metadata');
           video.setAttribute('playsinline', 'true');
           video.setAttribute('webkit-playsinline', 'true');
-          video.setAttribute('preload', 'auto');
-
-          const playPromise = video.play();
-          if (playPromise !== undefined) {
-            playPromise.then(() => {
-              video.pause(); 
-            }).catch(() => {});
-          }
         });
       });
 
