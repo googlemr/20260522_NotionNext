@@ -41,7 +41,7 @@ const MyApp = ({ Component, pageProps }) => {
     const processVideos = () => {
       const videos = document.querySelectorAll('video:not([data-fixed="1"])')
 
-      videos.forEach((video: HTMLVideoElement) => {
+      videos.forEach((video) => {
         video.dataset.fixed = '1'
 
         video.setAttribute('preload', 'metadata')
