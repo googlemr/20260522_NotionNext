@@ -74,4 +74,46 @@ const BLOG = {
   UUID_REDIRECT: process.env.UUID_REDIRECT || false
 }
 
+// ==================== 🛠️ 手机端视频空白修复脚本 (架构师拦截注入) ====================
+// 无论底层系统怎么拆分文件，在这里拦截合并，确保代码100%生效且不破坏原有配置
+BLOG.CUSTOM_HEAD_HTML = (BLOG.CUSTOM_HEAD_HTML || '') + `
+  <style>
+    /* 1. 骨架屏防御：为移动端未加载出来的视频提供灰色底色和最小高度，消除纯白断层 */
+    .notion-video {
+      background-color: #f3f4f6 !important;
+      min-height: 200px !important; 
+      border-radius: 8px !important;
+      overflow: hidden !important;
+    }
+    .dark .notion-video { 
+      background-color: #374151 !important; 
+    }
+  </style>
+  
+  <script>
+    // 2. DOM拦截器：适应单页应用（SPA）路由，确保切换页面时也能捕获到视频
+    document.addEventListener('DOMContentLoaded', () => {
+      const fixMobileVideos = () => {
+        const videos = document.querySelectorAll('.notion-video video');
+        videos.forEach(video => {
+          // 如果视频未设置封面，且没有被注入过时间戳
+          if (!video.poster && video.src && !video.src.includes('#t=')) {
+            // 强行附加时间碎片 #t=0.001，欺骗手机浏览器渲染第一帧作为封面
+            video.src = video.src + '#t=0.001';
+            video.setAttribute('preload', 'metadata');
+          }
+        });
+      };
+
+      // 运行首次加载检查
+      fixMobileVideos();
+
+      // 挂载微观观察者，只要页面发生任何内容变化，自动扫描并修复视频标签
+      const videoObserver = new MutationObserver(fixMobileVideos);
+      videoObserver.observe(document.body, { childList: true, subtree: true });
+    });
+  </script>
+`;
+// =============================================================================
+
 module.exports = BLOG
